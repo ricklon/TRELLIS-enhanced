@@ -257,21 +257,20 @@ def split_image(image: Image.Image) -> List[Image.Image]:
 
 with gr.Blocks(delete_cache=(600, 600)) as demo:
     gr.Markdown("""
-    ## Image to 3D Asset with [TRELLIS](https://github.com/microsoft/TRELLIS)
-
-    * Select an example image and click **"Generate"** to create a 3D asset.
-    * If you're satisfied with the result, click **"Extract GLB"** to download and view the GLB file.
-
-    ⚠️ **Disclaimer**: This demo does **not** support user-uploaded images. For more functionality, please explore [other TRELLIS spaces](https://huggingface.co/spaces?q=TRELLIS).
-""")
+    ## Image to 3D Asset with [TRELLIS](https://trellis3d.github.io/)
+    * Upload an image and click "Generate" to create a 3D asset. If the image has alpha channel, it be used as the mask. Otherwise, we use `rembg` to remove the background.
+    * If you find the generated 3D asset satisfactory, click "Extract GLB" to extract the GLB file and download it.
+    
+    ✨New: 1) Experimental multi-image support. 2) Gaussian file extraction.
+    """)
     
     with gr.Row():
         with gr.Column():
             with gr.Tabs() as input_tabs:
                 with gr.Tab(label="Single Image", id=0) as single_image_input_tab:
-                    image_prompt = gr.Image(label="Image Prompt", format="png", image_mode="RGBA", type="pil", height=300, interactive=False)
+                    image_prompt = gr.Image(label="Image Prompt", format="png", image_mode="RGBA", type="pil", height=300)
                 with gr.Tab(label="Multiple Images", id=1) as multiimage_input_tab:
-                    multiimage_prompt = gr.Gallery(label="Image Prompt", format="png", type="pil", height=300, columns=3, interactive=False)
+                    multiimage_prompt = gr.Gallery(label="Image Prompt", format="png", type="pil", height=300, columns=3)
                     gr.Markdown("""
                         Input different views of the object in separate images. 
                         
