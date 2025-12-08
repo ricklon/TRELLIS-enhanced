@@ -1,0 +1,16 @@
+# ninja log v7
+45	706	7869228451537555	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/cudaraster/impl/CudaRaster.obj	c964d0ab899a75af
+22	717	7869228451309101	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/common.obj	99f875a81291dcf7
+84	4048	7869228451928558	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/rasterize.obj	cdf33a9db3aef3af
+74	4139	7869228451820222	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/interpolate.obj	ef6dee21b42a5482
+10	4151	7869228451195709	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/antialias.obj	20e19e6a54b01623
+62	5223	7869228451709042	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/cudaraster/impl/RasterImpl_.obj	b4a4a91c7cbeba99
+101	9717	7869228452103936	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/texture_.obj	ecb448abc38d06a0
+144	17425	7869228452529936	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/torch/torch_rasterize.obj	9517b059b92a8509
+94	17479	7869228452028296	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/texture.obj	44b8949aa6e0d04f
+114	17492	7869228452225589	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/torch/torch_antialias.obj	fd5b4ed5b2ead793
+133	17525	7869228452423548	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/torch/torch_interpolate.obj	70e8188d22efa94
+37	17539	7869228451453526	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/cudaraster/impl/Buffer.obj	841ea86c5375bce4
+53	17551	7869228451619204	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/common/cudaraster/impl/RasterImpl.obj	5683ba7a300aea28
+153	17570	7869228452617770	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/torch/torch_texture.obj	4839bedc675c5d43
+124	18424	7869228452329466	C:/Users/rickr/GitHub/TRELLIS/extensions/nvdiffrast/build/temp.win-amd64-cpython-310/Release/nvdiffrast/torch/torch_bindings.obj	d731674fbf68954b

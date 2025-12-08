@@ -287,6 +287,7 @@ def bake_texture(
     mode: Literal['fast', 'opt'] = 'opt',
     lambda_tv: float = 1e-2,
     verbose: bool = False,
+    steps: int = 2500,
 ):
     """
     Bake texture to a mesh from multiple observations.
@@ -304,7 +305,9 @@ def bake_texture(
         far (float): Far plane of the camera.
         mode (Literal['fast', 'opt']): Mode of texture baking.
         lambda_tv (float): Weight of total variation loss in optimization.
+        lambda_tv (float): Weight of total variation loss in optimization.
         verbose (bool): Whether to print progress.
+        steps (int): Number of optimization steps.
     """
     vertices = torch.tensor(vertices).cuda()
     faces = torch.tensor(faces.astype(np.int32)).cuda()
@@ -369,7 +372,7 @@ def bake_texture(
             return torch.nn.functional.l1_loss(texture[:, :-1, :, :], texture[:, 1:, :, :]) + \
                    torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
     
-        total_steps = 2500
+        total_steps = steps
         with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
             for step in range(total_steps):
                 optimizer.zero_grad()
@@ -403,6 +406,9 @@ def to_glb(
     fill_holes: bool = True,
     fill_holes_max_size: float = 0.04,
     texture_size: int = 1024,
+
+    texture_mode: Literal['fast', 'opt'] = 'opt',
+    texture_optimizer_steps: int = 2500,
     debug: bool = False,
     verbose: bool = True,
 ) -> trimesh.Trimesh:
@@ -416,6 +422,9 @@ def to_glb(
         fill_holes (bool): Whether to fill holes in the mesh.
         fill_holes_max_size (float): Maximum area of a hole to fill.
         texture_size (int): Size of the texture.
+        texture_size (int): Size of the texture.
+        texture_mode (Literal['fast', 'opt']): Mode of texture baking.
+        texture_optimizer_steps (int): Number of optimization steps for texture baking.
         debug (bool): Whether to print debug information.
         verbose (bool): Whether to print progress.
     """
@@ -447,9 +456,10 @@ def to_glb(
     texture = bake_texture(
         vertices, faces, uvs,
         observations, masks, extrinsics, intrinsics,
-        texture_size=texture_size, mode='opt',
+        texture_size=texture_size, mode=texture_mode,
         lambda_tv=0.01,
-        verbose=verbose
+        verbose=verbose,
+        steps=texture_optimizer_steps,
     )
     texture = Image.fromarray(texture)
 

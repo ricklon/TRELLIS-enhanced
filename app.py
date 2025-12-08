@@ -1,6 +1,10 @@
 import gradio as gr
 import spaces
 from gradio_litmodel3d import LitModel3D
+import gradio.processing_utils
+
+# Workaround for missing ffprobe on Windows/environments without full ffmpeg
+gradio.processing_utils.video_is_playable = lambda x: True
 
 import os
 import shutil
@@ -137,7 +141,10 @@ def generate_and_extract_glb(
     multiimage_algo: Literal["multidiffusion", "stochastic"],
     mesh_simplify: float,
     texture_size: int,
+    texture_mode: Literal["fast", "opt"],
+    texture_steps: int,
     req: gr.Request,
+    file_name: str = "",
 ) -> Tuple[dict, str, str, str]:
     """
     Convert an image to a 3D model and extract GLB file.
@@ -154,6 +161,8 @@ def generate_and_extract_glb(
         multiimage_algo (Literal["multidiffusion", "stochastic"]): The algorithm for multi-image generation.
         mesh_simplify (float): The mesh simplification factor.
         texture_size (int): The texture resolution.
+        texture_mode (Literal["fast", "opt"]): The texture baking mode.
+        texture_steps (int): The number of texture optimization steps.
 
     Returns:
         dict: The information of the generated 3D model.
@@ -162,6 +171,15 @@ def generate_and_extract_glb(
         str: The path to the extracted GLB file (for download).
     """
     user_dir = os.path.join(TMP_DIR, str(req.session_hash))
+    
+    if not file_name:
+        import time
+        file_name = f"trellis_{int(time.time())}"
+    
+    # Sanitize filename
+    import re
+    file_name = re.sub(r'[^\w\-_\.]', '_', file_name)
+
     
     # Generate 3D model
     if not is_multiimage:
@@ -200,14 +218,21 @@ def generate_and_extract_glb(
     video = render_utils.render_video(outputs['gaussian'][0], num_frames=120)['color']
     video_geo = render_utils.render_video(outputs['mesh'][0], num_frames=120)['normal']
     video = [np.concatenate([video[i], video_geo[i]], axis=1) for i in range(len(video))]
-    video_path = os.path.join(user_dir, 'sample.mp4')
+    video_path = os.path.join(user_dir, f'{file_name}.mp4')
     imageio.mimsave(video_path, video, fps=15)
     
     # Extract GLB
     gs = outputs['gaussian'][0]
     mesh = outputs['mesh'][0]
-    glb = postprocessing_utils.to_glb(gs, mesh, simplify=mesh_simplify, texture_size=texture_size, verbose=False)
-    glb_path = os.path.join(user_dir, 'sample.glb')
+    glb = postprocessing_utils.to_glb(
+        gs, mesh, 
+        simplify=mesh_simplify, 
+        texture_size=texture_size, 
+        texture_mode=texture_mode, 
+        texture_optimizer_steps=texture_steps, 
+        verbose=False
+    )
+    glb_path = os.path.join(user_dir, f'{file_name}.glb')
     glb.export(glb_path)
     
     # Pack state for optional Gaussian extraction
@@ -303,6 +328,12 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
                         *NOTE: this is an experimental algorithm without training a specialized model. It may not produce the best results for all images, especially those having different poses or inconsistent details.*
                     """)
             
+            with gr.Row():
+                mesh_density_preset = gr.Radio(["Low", "Medium", "High"], label="Mesh Density Preset", value="Medium")
+                texture_quality_preset = gr.Radio(["Low", "Medium", "High"], label="Texture Quality Preset", value="Medium")
+            
+            output_filename = gr.Textbox(label="Output Filename (Optional)", placeholder="trellis_output")
+
             with gr.Accordion(label="Generation Settings", open=False):
                 seed = gr.Slider(0, MAX_SEED, label="Seed", value=0, step=1)
                 randomize_seed = gr.Checkbox(label="Randomize Seed", value=True)
@@ -317,8 +348,12 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
                 multiimage_algo = gr.Radio(["stochastic", "multidiffusion"], label="Multi-image Algorithm", value="stochastic")
             
             with gr.Accordion(label="GLB Extraction Settings", open=False):
-                mesh_simplify = gr.Slider(0.9, 0.98, label="Simplify", value=0.95, step=0.01)
+                mesh_simplify = gr.Slider(0.0, 0.98, label="Mesh Simplification (Lower = More Detail)", value=0.90, step=0.01)
                 texture_size = gr.Slider(512, 2048, label="Texture Size", value=1024, step=512)
+                texture_mode = gr.Radio(["fast", "opt"], label="Texture Baking Mode", value="fast")
+                texture_steps = gr.Slider(100, 5000, label="Texture Optimization Steps", value=2500, step=100, visible=False)
+            
+            time_estimation = gr.Markdown("Estimated Generation Time: ~20s")
 
             generate_btn = gr.Button("Generate & Extract GLB", variant="primary")
             extract_gs_btn = gr.Button("Extract Gaussian", interactive=False)
@@ -363,14 +398,43 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
     # Handlers
     demo.load(start_session)
     demo.unload(end_session)
-    
+
+    def update_time_estimation(ss_steps, slat_steps, tex_mode, tex_steps):
+        # Rough heuristics based on RTX 3070
+        gen_time = (ss_steps * 0.6) + (slat_steps * 0.6) + 4 # 4s overhead
+        tex_time = 0.5 if tex_mode == 'fast' else (tex_steps * 0.015) + 2
+        total_time = gen_time + tex_time
+        return f"Estimated Generation Time: ~{int(total_time)}s"
+
+    def update_mesh_presets(preset):
+        if preset == "Low": return 0.95
+        if preset == "Medium": return 0.90
+        if preset == "High": return 0.10
+        return 0.90
+
+    def update_texture_presets(preset):
+        # returns size, mode, steps, slider_visibility
+        if preset == "Low": return 512, "fast", 100, False
+        if preset == "Medium": return 1024, "fast", 100, False
+        if preset == "High": return 1024, "opt", 2500, True
+        return 1024, "fast", 100, False
+
+    def update_single_image_defaults():
+        # algo, ss_steps, ss_guidance
+        return "stochastic", 12, 7.5
+
+    def update_multi_image_defaults():
+        # algo, ss_steps, ss_guidance
+        return "multidiffusion", 30, 10.0
+
+    # Tab selection logic
     single_image_input_tab.select(
-        lambda: tuple([False, gr.Row.update(visible=True), gr.Row.update(visible=False)]),
-        outputs=[is_multiimage, single_image_example, multiimage_example]
+        lambda: tuple([False, gr.Row.update(visible=True), gr.Row.update(visible=False)]) + update_single_image_defaults(),
+        outputs=[is_multiimage, single_image_example, multiimage_example, multiimage_algo, ss_sampling_steps, ss_guidance_strength]
     )
     multiimage_input_tab.select(
-        lambda: tuple([True, gr.Row.update(visible=False), gr.Row.update(visible=True)]),
-        outputs=[is_multiimage, single_image_example, multiimage_example]
+        lambda: tuple([True, gr.Row.update(visible=False), gr.Row.update(visible=True)]) + update_multi_image_defaults(),
+        outputs=[is_multiimage, single_image_example, multiimage_example, multiimage_algo, ss_sampling_steps, ss_guidance_strength]
     )
     
     image_prompt.upload(
@@ -383,6 +447,34 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
         inputs=[multiimage_prompt],
         outputs=[multiimage_prompt],
     )
+    
+    # Preset handlers
+    mesh_density_preset.change(
+        update_mesh_presets,
+        inputs=[mesh_density_preset],
+        outputs=[mesh_simplify]
+    )
+    
+    texture_quality_preset.change(
+        update_texture_presets,
+        inputs=[texture_quality_preset],
+        outputs=[texture_size, texture_mode, texture_steps, gr.Slider(visible=True)] 
+    )
+
+    # Time estimation handlers
+    for trigger in [ss_sampling_steps, slat_sampling_steps, texture_mode, texture_steps]:
+        trigger.change(
+            update_time_estimation,
+            inputs=[ss_sampling_steps, slat_sampling_steps, texture_mode, texture_steps],
+            outputs=[time_estimation]
+        )
+
+    # Manual texture mode override visibility
+    texture_mode.change(
+        lambda x: gr.Slider(visible=x == "opt"),
+        inputs=[texture_mode],
+        outputs=[texture_steps],
+    )
 
     generate_btn.click(
         get_seed,
@@ -390,7 +482,7 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
         outputs=[seed],
     ).then(
         generate_and_extract_glb,
-        inputs=[image_prompt, multiimage_prompt, is_multiimage, seed, ss_guidance_strength, ss_sampling_steps, slat_guidance_strength, slat_sampling_steps, multiimage_algo, mesh_simplify, texture_size],
+        inputs=[image_prompt, multiimage_prompt, is_multiimage, seed, ss_guidance_strength, ss_sampling_steps, slat_guidance_strength, slat_sampling_steps, multiimage_algo, mesh_simplify, texture_size, texture_mode, texture_steps, req, output_filename],
         outputs=[output_buf, video_output, model_output, download_glb],
     ).then(
         lambda: tuple([gr.Button(interactive=True), gr.Button(interactive=True)]),

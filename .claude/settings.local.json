@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(uv pip index:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run python:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv run:*)",
+      "Bash(timeout 60 uv run:*)",
+      "Bash(curl:*)",
+      "Bash(uv pip uninstall:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

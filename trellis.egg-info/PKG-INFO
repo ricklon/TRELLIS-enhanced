@@ -1,0 +1,53 @@
+Metadata-Version: 2.4
+Name: trellis
+Version: 0.1.0
+Summary: TRELLIS - Scalable and Versatile 3D Generation from images
+License-Expression: MIT
+Requires-Python: <3.11,>=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch==2.4.0+cu121
+Requires-Dist: torchvision==0.19.0+cu121
+Requires-Dist: pillow==10.4.0
+Requires-Dist: imageio==2.36.1
+Requires-Dist: imageio-ffmpeg==0.5.1
+Requires-Dist: tqdm==4.67.1
+Requires-Dist: easydict==1.13
+Requires-Dist: opencv-python-headless==4.10.0.84
+Requires-Dist: scipy==1.14.1
+Requires-Dist: rembg==2.0.60
+Requires-Dist: onnxruntime==1.20.1
+Requires-Dist: trimesh==4.5.3
+Requires-Dist: xatlas==0.0.9
+Requires-Dist: pyvista==0.44.2
+Requires-Dist: pymeshfix==0.17.0
+Requires-Dist: igraph==0.11.8
+Requires-Dist: utils3d@ git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+Requires-Dist: xformers==0.0.27.post2
+Requires-Dist: spconv-cu120==2.3.6
+Requires-Dist: transformers==4.46.3
+Requires-Dist: gradio<5.0,>=4.0
+Requires-Dist: gradio_litmodel3d==0.0.1
+Requires-Dist: pydantic==2.10.6
+Requires-Dist: spaces>=0.44.0
+Requires-Dist: diff-gaussian-rasterization@ git+https://github.com/ashawkey/diff-gaussian-rasterization.git
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+
+---
+title: TRELLIS
+emoji: 🏢
+colorFrom: indigo
+colorTo: blue
+sdk: gradio
+sdk_version: 4.44.1
+app_file: app.py
+pinned: false
+license: mit
+short_description: Scalable and Versatile 3D Generation from images
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+Paper: https://huggingface.co/papers/2412.01506

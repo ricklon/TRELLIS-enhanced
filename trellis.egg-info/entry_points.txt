@@ -1,0 +1,2 @@
+[console_scripts]
+trellis = app:main
