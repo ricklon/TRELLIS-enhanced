@@ -145,6 +145,7 @@ def generate_and_extract_glb(
     texture_steps: int,
     req: gr.Request,
     file_name: str = "",
+    pivot_to_lowest_y: bool = False,
 ) -> Tuple[dict, str, str, str]:
     """
     Convert an image to a 3D model and extract GLB file.
@@ -163,6 +164,8 @@ def generate_and_extract_glb(
         texture_size (int): The texture resolution.
         texture_mode (Literal["fast", "opt"]): The texture baking mode.
         texture_steps (int): The number of texture optimization steps.
+        file_name (str): Custom output filename.
+        pivot_to_lowest_y (bool): Whether to align the model origin to the lowest point.
 
     Returns:
         dict: The information of the generated 3D model.
@@ -230,7 +233,8 @@ def generate_and_extract_glb(
         texture_size=texture_size, 
         texture_mode=texture_mode, 
         texture_optimizer_steps=texture_steps, 
-        verbose=False
+        verbose=False,
+        pivot_to_lowest_y=pivot_to_lowest_y
     )
     glb_path = os.path.join(user_dir, f'{file_name}.glb')
     glb.export(glb_path)
@@ -329,10 +333,12 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
                     """)
             
             with gr.Row():
-                mesh_density_preset = gr.Radio(["Low", "Medium", "High"], label="Mesh Density Preset", value="Medium")
-                texture_quality_preset = gr.Radio(["Low", "Medium", "High"], label="Texture Quality Preset", value="Medium")
+                mesh_density_preset = gr.Radio(["Low", "Medium", "High"], label="Mesh Density Preset", value="Medium", info="Low: Smallest file. High: Max detail (use for glasses/thin items).")
+                texture_quality_preset = gr.Radio(["Low", "Medium", "High"], label="Texture Quality Preset", value="Medium", info="High: Optimized baking (slower) - best for final export.")
             
-            output_filename = gr.Textbox(label="Output Filename (Optional)", placeholder="trellis_output")
+            with gr.Row():
+                output_filename = gr.Textbox(label="Output Filename (Optional)", placeholder="trellis_output")
+                pivot_to_lowest_y = gr.Checkbox(label="Align Origin to Lowest Point (e.g. Feet)", value=False)
 
             with gr.Accordion(label="Generation Settings", open=False):
                 seed = gr.Slider(0, MAX_SEED, label="Seed", value=0, step=1)
@@ -408,9 +414,9 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
 
     def update_mesh_presets(preset):
         if preset == "Low": return 0.95
-        if preset == "Medium": return 0.90
-        if preset == "High": return 0.10
-        return 0.90
+        if preset == "Medium": return 0.80
+        if preset == "High": return 0.15
+        return 0.80
 
     def update_texture_presets(preset):
         # returns size, mode, steps, slider_visibility
@@ -482,7 +488,7 @@ with gr.Blocks(delete_cache=(600, 600)) as demo:
         outputs=[seed],
     ).then(
         generate_and_extract_glb,
-        inputs=[image_prompt, multiimage_prompt, is_multiimage, seed, ss_guidance_strength, ss_sampling_steps, slat_guidance_strength, slat_sampling_steps, multiimage_algo, mesh_simplify, texture_size, texture_mode, texture_steps, req, output_filename],
+        inputs=[image_prompt, multiimage_prompt, is_multiimage, seed, ss_guidance_strength, ss_sampling_steps, slat_guidance_strength, slat_sampling_steps, multiimage_algo, mesh_simplify, texture_size, texture_mode, texture_steps, output_filename, pivot_to_lowest_y],
         outputs=[output_buf, video_output, model_output, download_glb],
     ).then(
         lambda: tuple([gr.Button(interactive=True), gr.Button(interactive=True)]),

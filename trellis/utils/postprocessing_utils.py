@@ -411,6 +411,7 @@ def to_glb(
     texture_optimizer_steps: int = 2500,
     debug: bool = False,
     verbose: bool = True,
+    pivot_to_lowest_y: bool = False,
 ) -> trimesh.Trimesh:
     """
     Convert a generated asset to a glb file.
@@ -427,6 +428,7 @@ def to_glb(
         texture_optimizer_steps (int): Number of optimization steps for texture baking.
         debug (bool): Whether to print debug information.
         verbose (bool): Whether to print progress.
+        pivot_to_lowest_y (bool): Whether to pivot the mesh to the lowest y value.
     """
     vertices = mesh.vertices.cpu().numpy()
     faces = mesh.faces.cpu().numpy()
@@ -465,6 +467,12 @@ def to_glb(
 
     # rotate mesh (from z-up to y-up)
     vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+    
+    # align to lowest y
+    if pivot_to_lowest_y:
+        min_y = vertices[:, 1].min()
+        vertices[:, 1] -= min_y
+
     material = trimesh.visual.material.PBRMaterial(
         roughnessFactor=1.0,
         baseColorTexture=texture,
